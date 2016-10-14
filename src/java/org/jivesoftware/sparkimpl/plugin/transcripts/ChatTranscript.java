@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class ChatTranscript {
 
-    private List<HistoryMessage> messages = new ArrayList<>();
+    private List<HistoryMessage> messages = new ArrayList<HistoryMessage>();
 
     /**
      * Add a <code>HistoryMessage</code> to users chat transcript.

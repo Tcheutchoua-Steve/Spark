@@ -171,10 +171,11 @@ public final class ChatTranscripts {
 
     /**
      * Retrieve the full chat history.
-     *
+     *  Tcheutchoua Steve. Will modifiy something here.
      * @param jid the jid of the the user whos history you wish to retrieve.
      * @return the ChatTranscript.
      */
+
     public static ChatTranscript getChatTranscript(String jid) {
         return getTranscript(getTranscriptFile(jid));
     }
