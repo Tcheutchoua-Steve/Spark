@@ -19,6 +19,7 @@
  */
 package org.jivesoftware.sparkimpl.plugin.transcripts;
 
+import org.apache.commons.vfs2.*;
 import org.jivesoftware.resource.Default;
 import org.jivesoftware.spark.SparkManager;
 import org.jivesoftware.spark.UserManager;
@@ -27,15 +28,8 @@ import org.jivesoftware.spark.util.log.Log;
 import org.xmlpull.mxp1.MXParser;
 import org.xmlpull.v1.XmlPullParser;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.RandomAccessFile;
+
+import java.io.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -48,7 +42,7 @@ import java.util.Date;
  *
  * @author Derek DeMoro
  */
-public final class ChatTranscripts {
+public final class ChatTranscripts  {
 
     /**
      * Default Date Formatter *
@@ -86,7 +80,7 @@ public final class ChatTranscripts {
         }
     }
 
-    private static void writeToFile(File transcriptFile, Collection<HistoryMessage> messages, boolean append) {
+    private static void writeToFile(FileObject transcriptFile, Collection<HistoryMessage> messages, boolean append) throws FileSystemException {
         final StringBuilder builder = new StringBuilder();
 
         final String one = " ";
@@ -119,10 +113,20 @@ public final class ChatTranscripts {
         if (!transcriptFile.exists() || !append) {
             // Write out new File
             try {
-                transcriptFile.getParentFile().mkdirs();
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(transcriptFile), "UTF-8"));
+               // transcriptFile.getParentFile().mkdirs();
+                String fileName = transcriptFile.getParent().getName().toString();
+                // fileName = transcriptFile.getParent();
+               /* BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(transcriptFile), "UTF-8"));
                 out.write(builder.toString());
                 out.close();
+                */
+
+               // create the file in ram
+                transcriptFile = openVFSFile(fileName);
+                //write to the file
+                writeVFSFile(builder.toString(),transcriptFile);
+                // close the file
+                transcriptFile.close();
             }
             catch (IOException e) {
                 Log.error(e);
@@ -279,4 +283,66 @@ public final class ChatTranscripts {
     }
 
 
+
+    public static FileObject openVFSFile(String tfileName) {
+        FileObject file = null;
+        try {
+            FileSystemManager mgr = VFS.getManager();
+            file = mgr.resolveFile("ram://"+tfileName);
+
+        } catch (FileSystemException e) {
+            System.out.println("ERROR: " + e.toString());
+        }
+        return file ;
+    }
+
+
+    public static StringBuffer readVFSFile(FileObject tfile) {
+        StringBuffer fileContents = new StringBuffer();
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            // needs the try/catch
+            // writes the content of the file to the outputstream
+            FileUtil.writeContent(tfile, outputStream);
+            // copy outputstream to StringBuffer
+            fileContents.append(outputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //return content of file in StringBuffer
+        return fileContents;
+    }
+
+    public static boolean writeVFSFile(String content, FileObject tfile) {
+        StringBuffer sbf = new StringBuffer(content);
+        try {
+            FileContent fc = tfile.getContent();
+            // true added in getOutputStream to enable append to file
+            OutputStream outputStream = fc.getOutputStream(true	);
+            PrintWriter pw = new PrintWriter(outputStream);
+            pw.write(sbf.toString());
+            pw.flush();
+            outputStream.flush();
+
+        } catch (FileSystemException e) {
+            System.out.println("ERROR: " + e.toString());
+        } catch (IOException e) {
+            System.out.println("ERROR: " + e.toString());
+        }
+        return true;
+    }
+
+
+    public static boolean appendVfSFile(StringBuffer sbf) {
+        return false;
+    }
+
+
+    public static void closeVFSFile(FileObject tfile) {
+        try {
+            tfile.close();
+        } catch (FileSystemException e) {
+            System.out.println("ERROR: " + e.toString());
+        }
+    }
 }
